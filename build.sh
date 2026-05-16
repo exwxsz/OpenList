@@ -2,7 +2,7 @@ set -e
 appName="openlist"
 builtAt="$(date +'%F %T %z')"
 gitAuthor="The OpenList Projects Contributors <noreply@openlist.team>"
-gitCommit=$(git log --pretty=format:"%h" -1)
+gitCommit=$(git log --pretty=format:"%h" -1 2>/dev/null || echo "unknown")
 
 # Set frontend repository, default to OpenListTeam/OpenList-Frontend
 frontendRepo="${FRONTEND_REPO:-OpenListTeam/OpenList-Frontend}"
@@ -154,8 +154,8 @@ BuildDev() {
   xgo -targets=windows/amd64,darwin/amd64,darwin/arm64 -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
   mv "$appName"-* dist
   cd dist
-  # cp ./"$appName"-windows-amd64.exe ./"$appName"-windows-amd64-upx.exe
-  # upx -9 ./"$appName"-windows-amd64-upx.exe
+  # cp ./\"$appName\"-windows-amd64.exe ./\"$appName\"-windows-amd64-upx.exe
+  # upx -9 ./\"$appName\"-windows-amd64-upx.exe
   find . -type f -print0 | xargs -0 md5sum >md5.txt
   cat md5.txt
 }
@@ -222,9 +222,9 @@ BuildRelease() {
   BuildWin7 ./build/"$appName"-windows7
   xgo -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
   # why? Because some target platforms seem to have issues with upx compression
-  # upx -9 ./"$appName"-linux-amd64
-  # cp ./"$appName"-windows-amd64.exe ./"$appName"-windows-amd64-upx.exe
-  # upx -9 ./"$appName"-windows-amd64-upx.exe
+  # upx -9 ./\"$appName\"-linux-amd64
+  # cp ./\"$appName\"-windows-amd64.exe ./\"$appName\"-windows-amd64-upx.exe
+  # upx -9 ./\"$appName\"-windows-amd64-upx.exe
   mv "$appName"-* build
   
   # Build LoongArch with glibc (both old world abi1.0 and new world abi2.0)
@@ -475,7 +475,7 @@ BuildReleaseFreeBSD() {
     sort -V | \
     tail -1 | \
     sed 's/release\///' | \
-    sed 's/\.0$//')
+    sed 's/\\.0$//')
   
   if [ -z "$freebsd_version" ]; then
     echo "Failed to get FreeBSD version, falling back to 14.3"
@@ -604,78 +604,5 @@ elif [ "$buildType" = "release" -o "$buildType" = "beta" ]; then
     BuildDocker
   elif [ "$dockerType" = "docker-multiplatform" ]; then
     BuildDockerMultiplatform
-  elif [ "$dockerType" = "linux_musl_arm" ]; then
-    BuildReleaseLinuxMuslArm
-    if [ "$useLite" = true ]; then
-      MakeRelease "md5-linux-musl-arm-lite.txt"
-    else
-      MakeRelease "md5-linux-musl-arm.txt"
-    fi
   elif [ "$dockerType" = "linux_musl" ]; then
-    BuildReleaseLinuxMusl
-    if [ "$useLite" = true ]; then
-      MakeRelease "md5-linux-musl-lite.txt"
-    else
-      MakeRelease "md5-linux-musl.txt"
-    fi
-  elif [ "$dockerType" = "android" ]; then
-    BuildReleaseAndroid
-    if [ "$useLite" = true ]; then
-      MakeRelease "md5-android-lite.txt"
-    else
-      MakeRelease "md5-android.txt"
-    fi
-  elif [ "$dockerType" = "freebsd" ]; then
-    BuildReleaseFreeBSD
-    if [ "$useLite" = true ]; then
-      MakeRelease "md5-freebsd-lite.txt"
-    else
-      MakeRelease "md5-freebsd.txt"
-    fi
-  elif [ "$dockerType" = "web" ]; then
-    echo "web only"
-  else
-    BuildRelease
-    if [ "$useLite" = true ]; then
-      MakeRelease "md5-lite.txt"
-    else
-      MakeRelease "md5.txt"
-    fi
-  fi
-elif [ "$buildType" = "prepare" ]; then
-  if [ "$dockerType" = "docker-multiplatform" ]; then
-    PrepareBuildDockerMusl
-  fi
-elif [ "$buildType" = "zip" ]; then
-  if [ -n "$otherParam" ]; then
-    if [ "$useLite" = true ]; then
-      MakeRelease "$otherParam-lite.txt"
-    else
-      MakeRelease "$otherParam.txt"
-    fi
-  elif [ -n "$dockerType" ]; then
-    if [ "$useLite" = true ]; then
-      MakeRelease "$dockerType-lite.txt"
-    else
-      MakeRelease "$dockerType.txt"
-    fi
-  else
-    if [ "$useLite" = true ]; then
-      MakeRelease "md5-lite.txt"
-    else
-      MakeRelease "md5.txt"
-    fi
-  fi
-else
-  echo -e "Parameter error"
-  echo -e "Usage: $0 {dev|beta|release|zip|prepare} [docker|docker-multiplatform|linux_musl_arm|linux_musl|android|freebsd|web] [lite] [other_params]"
-  echo -e "Examples:"
-  echo -e "  $0 dev"
-  echo -e "  $0 dev lite"
-  echo -e "  $0 dev docker"
-  echo -e "  $0 dev docker lite"
-  echo -e "  $0 release"
-  echo -e "  $0 release lite"
-  echo -e "  $0 release docker lite"
-  echo -e "  $0 release linux_musl"
-fi
+
